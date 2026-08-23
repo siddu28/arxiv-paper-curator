@@ -1,0 +1,8 @@
+# Week 1: Minimal Airflow dependencies
+# Only what's needed for the hello_world DAG
+
+# HTTP requests for service health checks
+requests>=2.32.0
+
+# Database drivers for service check task
+psycopg2-binary>=2.9.0
