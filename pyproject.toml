@@ -1,0 +1,55 @@
+[project]
+name = "arxiv-paper-curator"
+version = "0.1.0"
+description = "arXiv Paper Curator - Production Agentic RAG System"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # Web framework
+    "fastapi[standard]>=0.115.12",
+    "uvicorn>=0.34.0",
+    # Data validation & settings
+    "pydantic>=2.11.3",
+    "pydantic-settings>=2.8.1",
+    # Database
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary>=2.9.10",
+    # Search engine
+    "opensearch-py>=3.0.0",
+    # HTTP client (for Ollama health checks)
+    "httpx>=0.28.1",
+]
+readme = "README.md"
+
+[dependency-groups]
+dev = [
+    "anyio[trio]>=4.9.0",
+    "asgi-lifespan>=2.1.0",
+    "jupyter>=1.1.1",
+    "mypy>=1.15.0",
+    "notebook>=7.4.4",
+    "pre-commit>=4.2.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+    "pytest-dotenv>=0.5.2",
+    "pytest-env>=1.1.5",
+    "pytest-mock>=3.14.0",
+    "ruff>=0.11.5",
+    "types-sqlalchemy>=1.4.53.38",
+]
+
+[tool.ruff]
+line-length = 130
+exclude = ["notebooks/**", ".venv/**"]
+src = ["src", "tests"]
+lint.select = [
+  "I",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+env_files = ".env.test"
+
+[tool.mypy]
+explicit_package_bases = true
+ignore_errors = true
