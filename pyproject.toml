@@ -1,4 +1,4 @@
-[project]
+﻿[project]
 name = "arxiv-paper-curator"
 version = "0.1.0"
 description = "arXiv Paper Curator - Production Agentic RAG System"
@@ -15,8 +15,12 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     # Search engine
     "opensearch-py>=3.0.0",
-    # HTTP client (for Ollama health checks)
+    # HTTP client (for arXiv API and Ollama health checks)
     "httpx>=0.28.1",
+    # Week 2: Data ingestion pipeline
+    "docling>=2.43.0",
+    "python-dateutil>=2.9.0",
+    "pypdfium2>=4.0.0",
 ]
 readme = "README.md"
 
