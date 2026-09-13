@@ -1,10 +1,10 @@
-"""
+﻿"""
 Configuration management for the arXiv Paper Curator.
 =====================================================
 
 Week 1: Foundation settings for PostgreSQL, OpenSearch, and Ollama.
+Week 2: Added ArxivSettings and PDFParserSettings for data ingestion.
 New settings classes will be added in future weeks as services are integrated:
-    - Week 2: ArxivSettings, PDFParserSettings
     - Week 4: ChunkingSettings, JinaSettings
     - Week 6: LangfuseSettings, RedisSettings
     - Week 7: TelegramSettings
@@ -31,6 +31,71 @@ class BaseConfigSettings(BaseSettings):
     )
 
 
+class ArxivSettings(BaseConfigSettings):
+    """arXiv API client configuration.
+
+    Controls rate limiting, search parameters, PDF download behavior,
+    and concurrency limits for the data ingestion pipeline.
+
+    Environment variables are prefixed with ARXIV__ (double underscore).
+    Example: ARXIV__MAX_RESULTS=20
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=[".env", str(ENV_FILE_PATH)],
+        env_prefix="ARXIV__",
+        extra="ignore",
+        frozen=True,
+        case_sensitive=False,
+    )
+
+    base_url: str = "https://export.arxiv.org/api/query"
+    pdf_cache_dir: str = "./data/arxiv_pdfs"
+    rate_limit_delay: float = 3.0       # Seconds between requests (arXiv requires >= 3s)
+    timeout_seconds: int = 30           # HTTP request timeout
+    max_results: int = 15               # Default papers per fetch
+    search_category: str = "cs.AI"      # arXiv category to search
+    download_max_retries: int = 3       # PDF download retry attempts
+    download_retry_delay_base: float = 5.0  # Base delay for retry backoff (seconds)
+    max_concurrent_downloads: int = 5   # Concurrent PDF downloads
+    max_concurrent_parsing: int = 1     # Concurrent PDF parsing operations
+
+    # XML namespaces used in arXiv API responses
+    namespaces: dict = {
+        "atom": "http://www.w3.org/2005/Atom",
+        "opensearch": "http://a9.com/-/spec/opensearch/1.1/",
+        "arxiv": "http://arxiv.org/schemas/atom",
+    }
+
+    @field_validator("pdf_cache_dir")
+    @classmethod
+    def validate_cache_dir(cls, v: str) -> str:
+        os.makedirs(v, exist_ok=True)
+        return v
+
+
+class PDFParserSettings(BaseConfigSettings):
+    """PDF parsing configuration for Docling.
+
+    Controls page limits, file size limits, and parsing behavior.
+    Environment variables are prefixed with PDF_PARSER__ (double underscore).
+    Example: PDF_PARSER__MAX_PAGES=50
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=[".env", str(ENV_FILE_PATH)],
+        env_prefix="PDF_PARSER__",
+        extra="ignore",
+        frozen=True,
+        case_sensitive=False,
+    )
+
+    max_pages: int = 30                 # Maximum pages to process per PDF
+    max_file_size_mb: int = 20          # Maximum PDF file size in MB
+    do_ocr: bool = False                # Enable OCR for scanned PDFs (slow)
+    do_table_structure: bool = True     # Extract table structures
+
+
 class OpenSearchSettings(BaseConfigSettings):
     """OpenSearch connection and index configuration."""
 
@@ -52,7 +117,7 @@ class Settings(BaseConfigSettings):
     """Main application settings.
 
     Reads configuration from environment variables and .env file.
-    Week 1 includes only the core infrastructure settings.
+    Week 2 adds ArxivSettings and PDFParserSettings for data ingestion.
     """
 
     app_version: str = "0.1.0"
@@ -72,6 +137,8 @@ class Settings(BaseConfigSettings):
     ollama_timeout: int = 300
 
     # Nested settings
+    arxiv: ArxivSettings = Field(default_factory=ArxivSettings)
+    pdf_parser: PDFParserSettings = Field(default_factory=PDFParserSettings)
     opensearch: OpenSearchSettings = Field(default_factory=OpenSearchSettings)
 
     @field_validator("postgres_database_url")
