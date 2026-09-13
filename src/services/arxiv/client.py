@@ -336,7 +336,7 @@ class ArxivClient:
         return text.replace("\n", " ") if clean_newlines else text
 
     def _get_arxiv_id(self, entry: ET.Element) -> Optional[str]:
-        """Extract arXiv ID from entry.
+        """Extract arXiv ID from entry. 
 
         Args:
             entry: XML entry element
