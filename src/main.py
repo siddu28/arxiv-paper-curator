@@ -1,10 +1,10 @@
-"""
+﻿"""
 FastAPI application entry point for the arXiv Paper Curator.
 =============================================================
 
 Week 1: Initializes database + OpenSearch, includes health check router only.
+Week 2: Added arXiv client and PDF parser to lifespan initialization.
 Future weeks will add more services to the lifespan and include more routers:
-    - Week 2: arXiv client, PDF parser
     - Week 3: Search router
     - Week 4: Hybrid search router, embeddings service
     - Week 5: Ollama LLM, RAG ask/stream routers, Gradio app
@@ -22,7 +22,9 @@ from fastapi import FastAPI
 from src.config import get_settings
 from src.db.factory import make_database
 from src.routers import ping
+from src.services.arxiv.factory import make_arxiv_client
 from src.services.opensearch.factory import make_opensearch_client
+from src.services.pdf_parser.factory import make_pdf_parser_service
 
 # Setup logging
 logging.basicConfig(
@@ -35,9 +37,9 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Application lifespan — runs on startup and shutdown.
+    Application lifespan - runs on startup and shutdown.
 
-    Startup: Initialize database, OpenSearch, and store in app.state
+    Startup: Initialize database, OpenSearch, arXiv client, PDF parser
     Shutdown: Clean up database connections
     """
     logger.info("Starting RAG API...")
@@ -75,7 +77,17 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning("OpenSearch connection failed - search features will be limited")
 
-    logger.info("Services initialized: Database, OpenSearch")
+    # Week 2: Initialize arXiv client
+    arxiv_client = make_arxiv_client()
+    app.state.arxiv_client = arxiv_client
+    logger.info(f"arXiv client ready: category={arxiv_client.search_category}, max_results={arxiv_client.max_results}")
+
+    # Week 2: Initialize PDF parser service
+    pdf_parser = make_pdf_parser_service()
+    app.state.pdf_parser = pdf_parser
+    logger.info("PDF parser service ready (Docling)")
+
+    logger.info("Services initialized: Database, OpenSearch, arXiv, PDF Parser")
     logger.info("API ready")
 
     yield
@@ -93,7 +105,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Include routers — Week 1: health check only
+# Include routers
 app.include_router(ping.router, prefix="/api/v1")  # Health check endpoint
 
 

@@ -1,10 +1,10 @@
-"""
+﻿"""
 FastAPI dependency injection for the arXiv Paper Curator.
 =========================================================
 
 Week 1: Dependencies for Settings, Database, Session, and OpenSearch.
+Week 2: Added ArxivDep and PDFParserDep.
 New dependencies will be added as services are integrated:
-    - Week 2: ArxivDep, PDFParserDep
     - Week 4: EmbeddingsDep
     - Week 5: OllamaDep
     - Week 6: LangfuseDep, CacheDep
@@ -19,7 +19,9 @@ from sqlalchemy.orm import Session
 
 from src.config import Settings
 from src.db.interfaces.base import BaseDatabase
+from src.services.arxiv.client import ArxivClient
 from src.services.opensearch.client import OpenSearchClient
+from src.services.pdf_parser.parser import PDFParserService
 
 
 @lru_cache
@@ -49,8 +51,20 @@ def get_opensearch_client(request: Request) -> OpenSearchClient:
     return request.app.state.opensearch_client
 
 
-# Dependency annotations — use these in router function signatures
+def get_arxiv_client(request: Request) -> ArxivClient:
+    """Get arXiv client from the request state."""
+    return request.app.state.arxiv_client
+
+
+def get_pdf_parser(request: Request) -> PDFParserService:
+    """Get PDF parser service from the request state."""
+    return request.app.state.pdf_parser
+
+
+# Dependency annotations - use these in router function signatures
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 DatabaseDep = Annotated[BaseDatabase, Depends(get_database)]
 SessionDep = Annotated[Session, Depends(get_db_session)]
 OpenSearchDep = Annotated[OpenSearchClient, Depends(get_opensearch_client)]
+ArxivDep = Annotated[ArxivClient, Depends(get_arxiv_client)]
+PDFParserDep = Annotated[PDFParserService, Depends(get_pdf_parser)]
