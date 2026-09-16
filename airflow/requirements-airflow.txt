@@ -1,8 +1,26 @@
-# Week 1: Minimal Airflow dependencies
-# Only what's needed for the hello_world DAG
+﻿# Week 2: Airflow dependencies for data ingestion pipeline
+# These are installed inside the Airflow Docker container
 
 # HTTP requests for service health checks
 requests>=2.32.0
 
-# Database drivers for service check task
+# Database drivers
 psycopg2-binary>=2.9.0
+sqlalchemy>=2.0.0
+
+# Data validation & settings
+pydantic>=2.11.3
+pydantic-settings>=2.8.1
+
+# arXiv API client
+httpx>=0.28.1
+
+# PDF parsing
+docling>=2.43.0
+pypdfium2>=4.0.0
+
+# Date parsing
+python-dateutil>=2.9.0
+
+# OpenSearch client
+opensearch-py>=3.0.0
