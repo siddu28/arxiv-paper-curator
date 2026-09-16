@@ -1,1 +1,3 @@
-"""Repository layer for data access (Week 2+)."""
+﻿from .paper import PaperRepository
+
+__all__ = ["PaperRepository"]
