@@ -4,8 +4,8 @@ Configuration management for the arXiv Paper Curator.
 
 Week 1: Foundation settings for PostgreSQL, OpenSearch, and Ollama.
 Week 2: Added ArxivSettings and PDFParserSettings for data ingestion.
+Week 3: Added ChunkingSettings, Jina API key, and vector search config.
 New settings classes will be added in future weeks as services are integrated:
-    - Week 4: ChunkingSettings, JinaSettings
     - Week 6: LangfuseSettings, RedisSettings
     - Week 7: TelegramSettings
 """
@@ -96,8 +96,35 @@ class PDFParserSettings(BaseConfigSettings):
     do_table_structure: bool = True     # Extract table structures
 
 
+class ChunkingSettings(BaseConfigSettings):
+    """Text chunking configuration for the indexing pipeline.
+
+    Controls how paper text is split into overlapping chunks for
+    vector search. Uses word-based chunking with configurable sizes.
+
+    Environment variables are prefixed with CHUNKING__ (double underscore).
+    Example: CHUNKING__CHUNK_SIZE=600
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=[".env", str(ENV_FILE_PATH)],
+        env_prefix="CHUNKING__",
+        extra="ignore",
+        frozen=True,
+        case_sensitive=False,
+    )
+
+    chunk_size: int = 600               # Target words per chunk
+    overlap_size: int = 100             # Words to overlap between consecutive chunks
+    min_chunk_size: int = 100           # Minimum words for a chunk to be valid
+    section_based: bool = True          # Use section-based chunking when sections available
+
+
 class OpenSearchSettings(BaseConfigSettings):
-    """OpenSearch connection and index configuration."""
+    """OpenSearch connection and index configuration.
+
+    Week 3: Added vector search and hybrid search settings.
+    """
 
     model_config = SettingsConfigDict(
         env_file=[".env", str(ENV_FILE_PATH)],
@@ -109,8 +136,16 @@ class OpenSearchSettings(BaseConfigSettings):
 
     host: str = "http://localhost:9200"
     index_name: str = "arxiv-papers"
-    chunk_index_suffix: str = "chunks"  # Creates index: {index_name}-{suffix}
+    chunk_index_suffix: str = "chunks"  # Creates hybrid index: {index_name}-{suffix}
     max_text_size: int = 1000000
+
+    # Vector search settings (Week 3)
+    vector_dimension: int = 1024        # Jina embeddings v3 dimension
+    vector_space_type: str = "cosinesimil"  # cosinesimil, l2, innerproduct
+
+    # Hybrid search settings (Week 3)
+    rrf_pipeline_name: str = "hybrid-rrf-pipeline"
+    hybrid_search_size_multiplier: int = 2  # Get k*multiplier candidates for better recall
 
 
 class Settings(BaseConfigSettings):
@@ -118,6 +153,7 @@ class Settings(BaseConfigSettings):
 
     Reads configuration from environment variables and .env file.
     Week 2 adds ArxivSettings and PDFParserSettings for data ingestion.
+    Week 3 adds ChunkingSettings and Jina API key for hybrid search.
     """
 
     app_version: str = "0.1.0"
@@ -136,9 +172,13 @@ class Settings(BaseConfigSettings):
     ollama_model: str = "llama3.2:1b"
     ollama_timeout: int = 300
 
+    # Jina AI embeddings configuration (Week 3)
+    jina_api_key: str = ""
+
     # Nested settings
     arxiv: ArxivSettings = Field(default_factory=ArxivSettings)
     pdf_parser: PDFParserSettings = Field(default_factory=PDFParserSettings)
+    chunking: ChunkingSettings = Field(default_factory=ChunkingSettings)
     opensearch: OpenSearchSettings = Field(default_factory=OpenSearchSettings)
 
     @field_validator("postgres_database_url")
