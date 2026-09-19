@@ -21,6 +21,8 @@ dependencies = [
     "docling>=2.43.0",
     "python-dateutil>=2.9.0",
     "pypdfium2>=4.0.0",
+    # Week 3: Text chunking and search
+    "semchunk>=3.0.0",
 ]
 readme = "README.md"
 
@@ -57,3 +59,4 @@ env_files = ".env.test"
 [tool.mypy]
 explicit_package_bases = true
 ignore_errors = true
+
