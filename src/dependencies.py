@@ -22,6 +22,7 @@ from src.db.interfaces.base import BaseDatabase
 from src.services.arxiv.client import ArxivClient
 from src.services.opensearch.client import OpenSearchClient
 from src.services.pdf_parser.parser import PDFParserService
+from src.services.embeddings.jina_client import JinaEmbeddingsClient
 
 
 @lru_cache
@@ -61,6 +62,11 @@ def get_pdf_parser(request: Request) -> PDFParserService:
     return request.app.state.pdf_parser
 
 
+
+def get_embeddings_client(request: Request) -> JinaEmbeddingsClient:
+    "`""Get Jina embeddings client from the request state."`""
+    return request.app.state.embeddings_client
+
 # Dependency annotations - use these in router function signatures
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 DatabaseDep = Annotated[BaseDatabase, Depends(get_database)]
@@ -68,3 +74,5 @@ SessionDep = Annotated[Session, Depends(get_db_session)]
 OpenSearchDep = Annotated[OpenSearchClient, Depends(get_opensearch_client)]
 ArxivDep = Annotated[ArxivClient, Depends(get_arxiv_client)]
 PDFParserDep = Annotated[PDFParserService, Depends(get_pdf_parser)]
+EmbeddingsDep = Annotated[JinaEmbeddingsClient, Depends(get_embeddings_client)]
+

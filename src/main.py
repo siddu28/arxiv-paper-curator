@@ -25,6 +25,7 @@ from src.routers import ping, search
 from src.services.arxiv.factory import make_arxiv_client
 from src.services.opensearch.factory import make_opensearch_client
 from src.services.pdf_parser.factory import make_pdf_parser_service
+from src.services.embeddings.factory import make_jina_embeddings_client
 
 # Setup logging
 logging.basicConfig(
@@ -87,7 +88,17 @@ async def lifespan(app: FastAPI):
     app.state.pdf_parser = pdf_parser
     logger.info("PDF parser service ready (Docling)")
 
-    logger.info("Services initialized: Database, OpenSearch, arXiv, PDF Parser")
+
+    # Week 3: Initialize Jina embeddings client
+    try:
+        jina_client = make_jina_embeddings_client()
+        app.state.embeddings_client = jina_client
+        logger.info("Jina embeddings client ready (1024-dim vectors)")
+    except ValueError as e:
+        logger.warning(f"Jina embeddings not available: {e}")
+        app.state.embeddings_client = None
+
+    logger.info("Services initialized: Database, OpenSearch, arXiv, PDF Parser, Jina Embeddings")
     logger.info("API ready")
 
     yield
@@ -112,4 +123,5 @@ app.include_router(search.router, prefix="/api/v1")  # Week 3: BM25 search
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")
+
 
