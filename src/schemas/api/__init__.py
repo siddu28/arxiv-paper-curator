@@ -1,1 +1,1 @@
-# API schemas
+﻿"""API request/response schemas."""
