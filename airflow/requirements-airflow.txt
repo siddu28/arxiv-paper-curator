@@ -24,3 +24,7 @@ python-dateutil>=2.9.0
 
 # OpenSearch client
 opensearch-py>=3.0.0
+
+# Week 3: Text chunking
+semchunk>=3.0.0
+

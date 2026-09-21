@@ -3,12 +3,10 @@ arXiv Paper Ingestion DAG
 ==========================
 
 Daily pipeline that fetches CS.AI papers from arXiv, processes PDFs,
-and stores results in PostgreSQL.
+indexes them with embeddings into OpenSearch, and stores results in PostgreSQL.
 
 Schedule: Monday-Friday at 6 AM UTC
-Pipeline: setup -> fetch -> report -> cleanup
-
-Week 3 will add an indexing task between fetch and report.
+Pipeline: setup -> fetch -> index -> verify -> report -> cleanup
 """
 
 from datetime import datetime, timedelta
@@ -20,6 +18,7 @@ from airflow.operators.python import PythonOperator
 # Import task functions from modular structure
 from arxiv_ingestion.setup import setup_environment
 from arxiv_ingestion.fetching import fetch_daily_papers
+from arxiv_ingestion.indexing import index_papers_hybrid, verify_hybrid_index
 from arxiv_ingestion.reporting import generate_daily_report
 
 # Default DAG arguments
@@ -38,11 +37,11 @@ default_args = {
 dag = DAG(
     "arxiv_paper_ingestion",
     default_args=default_args,
-    description="Daily arXiv CS.AI paper pipeline: fetch papers, parse PDFs, store to PostgreSQL",
+    description="Daily arXiv CS.AI paper pipeline: fetch, parse PDFs, chunk, embed, and index for hybrid search",
     schedule="0 6 * * 1-5",  # Monday-Friday at 6 AM UTC
     max_active_runs=1,
     catchup=False,
-    tags=["arxiv", "papers", "ingestion"],
+    tags=["arxiv", "papers", "ingestion", "hybrid-search"],
 )
 
 # Task 1: Verify all services are healthy
@@ -59,14 +58,28 @@ fetch_task = PythonOperator(
     dag=dag,
 )
 
-# Task 3: Generate daily summary report
+# Task 3: Chunk papers, generate embeddings, index to OpenSearch (Week 3)
+index_task = PythonOperator(
+    task_id="index_papers_hybrid",
+    python_callable=index_papers_hybrid,
+    dag=dag,
+)
+
+# Task 4: Verify hybrid index health (Week 3)
+verify_task = PythonOperator(
+    task_id="verify_hybrid_index",
+    python_callable=verify_hybrid_index,
+    dag=dag,
+)
+
+# Task 5: Generate daily summary report
 report_task = PythonOperator(
     task_id="generate_daily_report",
     python_callable=generate_daily_report,
     dag=dag,
 )
 
-# Task 4: Clean up temporary files
+# Task 6: Clean up temporary files
 cleanup_task = BashOperator(
     task_id="cleanup_temp_files",
     bash_command="""
@@ -78,6 +91,5 @@ cleanup_task = BashOperator(
     dag=dag,
 )
 
-# Task dependencies — linear pipeline
-# Week 3 will insert an indexing task between fetch and report
-setup_task >> fetch_task >> report_task >> cleanup_task
+# Task dependencies — full pipeline with indexing
+setup_task >> fetch_task >> index_task >> verify_task >> report_task >> cleanup_task
