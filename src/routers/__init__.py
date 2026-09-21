@@ -1,6 +1,9 @@
-"""Router modules for the RAG API."""
+﻿"""Router modules for the RAG API."""
 
-# Week 1: Only health check router
+# Week 1: Health check router
 from . import ping
 
-__all__ = ["ping"]
+# Week 3: BM25 search router
+from . import search
+
+__all__ = ["ping", "search"]

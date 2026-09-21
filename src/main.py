@@ -5,7 +5,7 @@ FastAPI application entry point for the arXiv Paper Curator.
 Week 1: Initializes database + OpenSearch, includes health check router only.
 Week 2: Added arXiv client and PDF parser to lifespan initialization.
 Future weeks will add more services to the lifespan and include more routers:
-    - Week 3: Search router
+    - Week 3: Search router (DONE)
     - Week 4: Hybrid search router, embeddings service
     - Week 5: Ollama LLM, RAG ask/stream routers, Gradio app
     - Week 6: Langfuse tracer, Redis cache
@@ -21,7 +21,7 @@ from fastapi import FastAPI
 
 from src.config import get_settings
 from src.db.factory import make_database
-from src.routers import ping
+from src.routers import ping, search
 from src.services.arxiv.factory import make_arxiv_client
 from src.services.opensearch.factory import make_opensearch_client
 from src.services.pdf_parser.factory import make_pdf_parser_service
@@ -107,7 +107,9 @@ app = FastAPI(
 
 # Include routers
 app.include_router(ping.router, prefix="/api/v1")  # Health check endpoint
+app.include_router(search.router, prefix="/api/v1")  # Week 3: BM25 search
 
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")
+
