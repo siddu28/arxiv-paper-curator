@@ -1,27 +1,23 @@
-"""
-Week 1: Minimal OpenSearch client — health check and index management only.
+﻿"""OpenSearch client supporting both simple BM25 and hybrid search.
 
-Search functionality (BM25, hybrid, vector) will be added in Weeks 3-4.
-Full client methods:
-    - Week 3: BM25 keyword search, document indexing
-    - Week 4: Hybrid search with RRF, vector search, query builder
+Week 1: Health check and basic index management.
+Week 3 Part 2: Upgraded to hybrid index with kNN vector fields and RRF pipeline.
+Week 3 Part 4: Will add search methods (BM25, vector, hybrid) and chunk indexing.
 """
 
 import logging
 from typing import Any, Dict
 
 from opensearchpy import OpenSearch
-
 from src.config import Settings
+
+from .index_config_hybrid import ARXIV_PAPERS_CHUNKS_MAPPING, HYBRID_RRF_PIPELINE
 
 logger = logging.getLogger(__name__)
 
 
 class OpenSearchClient:
-    """OpenSearch client — Week 1 provides health check and index setup only.
-
-    Search capabilities (BM25, hybrid, vector) will be added in Weeks 3-4.
-    """
+    """OpenSearch client supporting BM25 and hybrid search with native RRF."""
 
     def __init__(self, host: str, settings: Settings):
         self.host = host
@@ -47,7 +43,7 @@ class OpenSearchClient:
             return False
 
     def get_index_stats(self) -> Dict[str, Any]:
-        """Get statistics for the index."""
+        """Get statistics for the hybrid index."""
         try:
             if not self.client.indices.exists(index=self.index_name):
                 return {"index_name": self.index_name, "exists": False, "document_count": 0}
@@ -68,17 +64,14 @@ class OpenSearchClient:
             return {"index_name": self.index_name, "exists": False, "document_count": 0, "error": str(e)}
 
     def setup_indices(self, force: bool = False) -> Dict[str, bool]:
-        """Setup a basic index for storing paper data.
-
-        Week 1: Creates a simple index with basic mappings.
-        Week 3-4: This will be enhanced with hybrid mappings (BM25 + vector).
-        """
+        """Setup the hybrid search index and RRF pipeline."""
         results = {}
-        results["hybrid_index"] = self._create_basic_index(force)
+        results["hybrid_index"] = self._create_hybrid_index(force)
+        results["rrf_pipeline"] = self._create_rrf_pipeline(force)
         return results
 
-    def _create_basic_index(self, force: bool = False) -> bool:
-        """Create a basic index for paper chunks.
+    def _create_hybrid_index(self, force: bool = False) -> bool:
+        """Create hybrid index for all search types (BM25, vector, hybrid).
 
         :param force: If True, recreate index even if it exists
         :returns: True if created, False if already exists
@@ -86,40 +79,59 @@ class OpenSearchClient:
         try:
             if force and self.client.indices.exists(index=self.index_name):
                 self.client.indices.delete(index=self.index_name)
-                logger.info(f"Deleted existing index: {self.index_name}")
+                logger.info(f"Deleted existing hybrid index: {self.index_name}")
 
             if not self.client.indices.exists(index=self.index_name):
-                # Week 1: Basic mapping — will be enhanced with vector fields in Week 4
-                basic_mapping = {
-                    "settings": {
-                        "index": {
-                            "number_of_shards": 1,
-                            "number_of_replicas": 0,
-                        }
-                    },
-                    "mappings": {
-                        "properties": {
-                            "arxiv_id": {"type": "keyword"},
-                            "title": {"type": "text", "analyzer": "standard"},
-                            "content": {"type": "text", "analyzer": "standard"},
-                            "section_title": {"type": "text"},
-                            "chunk_index": {"type": "integer"},
-                            "created_at": {"type": "date"},
-                        }
-                    },
-                }
-
-                self.client.indices.create(index=self.index_name, body=basic_mapping)
-                logger.info(f"Created basic index: {self.index_name}")
+                self.client.indices.create(index=self.index_name, body=ARXIV_PAPERS_CHUNKS_MAPPING)
+                logger.info(f"Created hybrid index: {self.index_name}")
                 return True
 
-            logger.info(f"Index already exists: {self.index_name}")
+            logger.info(f"Hybrid index already exists: {self.index_name}")
             return False
 
         except Exception as e:
-            # Handle race condition when multiple workers start simultaneously
+            # Handle race condition when multiple workers start simultaneously:
+            # all check exists() -> False, all try to create, only one succeeds.
             if "resource_already_exists_exception" in str(e):
-                logger.info(f"Index already exists (created by another worker): {self.index_name}")
+                logger.info(f"Hybrid index already exists (created by another worker): {self.index_name}")
                 return False
-            logger.error(f"Error creating index: {e}")
+            logger.error(f"Error creating hybrid index: {e}")
+            raise
+
+    def _create_rrf_pipeline(self, force: bool = False) -> bool:
+        """Create RRF search pipeline for native hybrid search.
+
+        :param force: If True, recreate pipeline even if it exists
+        :returns: True if created, False if already exists
+        """
+        try:
+            pipeline_id = HYBRID_RRF_PIPELINE["id"]
+
+            if force:
+                try:
+                    self.client.ingest.get_pipeline(id=pipeline_id)
+                    self.client.ingest.delete_pipeline(id=pipeline_id)
+                    logger.info(f"Deleted existing RRF pipeline: {pipeline_id}")
+                except Exception:
+                    pass
+
+            try:
+                self.client.ingest.get_pipeline(id=pipeline_id)
+                logger.info(f"RRF pipeline already exists: {pipeline_id}")
+                return False
+            except Exception:
+                pass
+
+            pipeline_body = {
+                "description": HYBRID_RRF_PIPELINE["description"],
+                "phase_results_processors": HYBRID_RRF_PIPELINE["phase_results_processors"],
+            }
+
+            self.client.transport.perform_request("PUT", f"/_search/pipeline/{pipeline_id}", body=pipeline_body)
+
+            logger.info(f"Created RRF search pipeline: {pipeline_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error creating RRF pipeline: {e}")
             raise
