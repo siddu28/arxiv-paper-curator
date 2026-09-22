@@ -6,7 +6,7 @@ Week 1: Dependencies for Settings, Database, Session, and OpenSearch.
 Week 2: Added ArxivDep and PDFParserDep.
 New dependencies will be added as services are integrated:
     - Week 4: EmbeddingsDep
-    - Week 5: OllamaDep
+    - Week 4: OllamaDep (DONE)
     - Week 6: LangfuseDep, CacheDep
     - Week 7: TelegramDep, AgenticRAGDep
 """
@@ -23,6 +23,7 @@ from src.services.arxiv.client import ArxivClient
 from src.services.opensearch.client import OpenSearchClient
 from src.services.pdf_parser.parser import PDFParserService
 from src.services.embeddings.jina_client import JinaEmbeddingsClient
+from src.services.ollama.client import OllamaClient
 
 
 @lru_cache
@@ -67,6 +68,11 @@ def get_embeddings_client(request: Request) -> JinaEmbeddingsClient:
     "`""Get Jina embeddings client from the request state."`""
     return request.app.state.embeddings_client
 
+
+def get_ollama_client(request: Request) -> OllamaClient:
+    "`""Get Ollama client from the request state."`""
+    return request.app.state.ollama_client
+
 # Dependency annotations - use these in router function signatures
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 DatabaseDep = Annotated[BaseDatabase, Depends(get_database)]
@@ -75,4 +81,6 @@ OpenSearchDep = Annotated[OpenSearchClient, Depends(get_opensearch_client)]
 ArxivDep = Annotated[ArxivClient, Depends(get_arxiv_client)]
 PDFParserDep = Annotated[PDFParserService, Depends(get_pdf_parser)]
 EmbeddingsDep = Annotated[JinaEmbeddingsClient, Depends(get_embeddings_client)]
+OllamaDep = Annotated[OllamaClient, Depends(get_ollama_client)]
+
 

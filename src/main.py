@@ -26,6 +26,7 @@ from src.services.arxiv.factory import make_arxiv_client
 from src.services.opensearch.factory import make_opensearch_client
 from src.services.pdf_parser.factory import make_pdf_parser_service
 from src.services.embeddings.factory import make_jina_embeddings_client
+from src.services.ollama.factory import make_ollama_client
 
 # Setup logging
 logging.basicConfig(
@@ -98,7 +99,16 @@ async def lifespan(app: FastAPI):
         logger.warning(f"Jina embeddings not available: {e}")
         app.state.embeddings_client = None
 
-    logger.info("Services initialized: Database, OpenSearch, arXiv, PDF Parser, Jina Embeddings")
+
+    # Week 4: Initialize Ollama LLM client
+    ollama_client = make_ollama_client()
+    app.state.ollama_client = ollama_client
+    try:
+        ollama_health = await ollama_client.health_check()
+        logger.info(f"Ollama LLM ready: version={ollama_health.get('version', 'unknown')}")
+    except Exception as e:
+        logger.warning(f"Ollama not available (LLM features limited): {e}")
+    logger.info("Services initialized: Database, OpenSearch, arXiv, PDF Parser, Jina Embeddings, Ollama LLM")
     logger.info("API ready")
 
     yield
@@ -123,5 +133,6 @@ app.include_router(search.router, prefix="/api/v1")  # Week 3: BM25 search
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")
+
 
 
