@@ -21,7 +21,7 @@ from fastapi import FastAPI
 
 from src.config import get_settings
 from src.db.factory import make_database
-from src.routers import ping, search, hybrid_search
+from src.routers import ping, search, hybrid_search, ask
 from src.services.arxiv.factory import make_arxiv_client
 from src.services.opensearch.factory import make_opensearch_client
 from src.services.pdf_parser.factory import make_pdf_parser_service
@@ -130,10 +130,12 @@ app = FastAPI(
 app.include_router(ping.router, prefix="/api/v1")  # Health check endpoint
 app.include_router(search.router, prefix="/api/v1")  # Week 3: BM25 search
 app.include_router(hybrid_search.router, prefix="/api/v1")  # Week 4: Hybrid search
+app.include_router(ask.ask_router, prefix="/api/v1")  # Week 4: RAG ask endpoint
 
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")
+
 
 
 

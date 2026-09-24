@@ -6,7 +6,8 @@ from . import ping
 # Week 3: BM25 search router
 from . import search
 
-# Week 4: Hybrid search router
+# Week 4: Hybrid search + RAG ask routers
 from . import hybrid_search
+from . import ask
 
-__all__ = ["ping", "search", "hybrid_search"]
+__all__ = ["ping", "search", "hybrid_search", "ask"]
