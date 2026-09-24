@@ -2,7 +2,7 @@
 
 Week 1: Health check only.
 Week 4 Part 2: Full LLM integration with generate, stream, and RAG answer methods.
-Week 4 Part 3: RAGPromptBuilder and ResponseParser will be wired in.
+Week 4 Part 3: RAGPromptBuilder and ResponseParser wired in.
 """
 
 import json
@@ -13,6 +13,7 @@ import httpx
 from src.config import Settings
 from src.exceptions import OllamaConnectionError, OllamaException, OllamaTimeoutError
 from src.schemas.ollama import RAGResponse
+from src.services.ollama.prompts import RAGPromptBuilder, ResponseParser
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +25,8 @@ class OllamaClient:
         """Initialize Ollama client with settings."""
         self.base_url = settings.ollama_host
         self.timeout = httpx.Timeout(float(settings.ollama_timeout))
-        # Prompt builder and response parser will be set in Part 3
-        self.prompt_builder = None
-        self.response_parser = None
+        self.prompt_builder = RAGPromptBuilder()
+        self.response_parser = ResponseParser()
 
     async def health_check(self) -> Dict[str, Any]:
         """Check if Ollama service is healthy and responding.
@@ -312,3 +312,4 @@ class OllamaClient:
         prompt += "### Answer:\nProvide a natural, conversational response and cite sources using [arXiv:id] format.\n\n"
 
         return prompt
+
