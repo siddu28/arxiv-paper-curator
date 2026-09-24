@@ -131,10 +131,12 @@ app.include_router(ping.router, prefix="/api/v1")  # Health check endpoint
 app.include_router(search.router, prefix="/api/v1")  # Week 3: BM25 search
 app.include_router(hybrid_search.router, prefix="/api/v1")  # Week 4: Hybrid search
 app.include_router(ask.ask_router, prefix="/api/v1")  # Week 4: RAG ask endpoint
+app.include_router(ask.stream_router, prefix="/api/v1")  # Week 4: Streaming RAG endpoint
 
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")
+
 
 
 
