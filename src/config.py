@@ -6,7 +6,7 @@ Week 1: Foundation settings for PostgreSQL, OpenSearch, and Ollama.
 Week 2: Added ArxivSettings and PDFParserSettings for data ingestion.
 Week 3: Added ChunkingSettings, Jina API key, and vector search config.
 New settings classes will be added in future weeks as services are integrated:
-    - Week 6: LangfuseSettings, RedisSettings
+    - Week 5: LangfuseSettings, RedisSettings (DONE)
     - Week 7: TelegramSettings
 """
 
@@ -147,6 +147,59 @@ class OpenSearchSettings(BaseConfigSettings):
     rrf_pipeline_name: str = "hybrid-rrf-pipeline"
     hybrid_search_size_multiplier: int = 2  # Get k*multiplier candidates for better recall
 
+class LangfuseSettings(BaseConfigSettings):
+    """Langfuse observability settings.
+
+    Langfuse provides tracing, scoring, and debugging for RAG pipelines.
+    Set LANGFUSE__PUBLIC_KEY, LANGFUSE__SECRET_KEY, LANGFUSE__HOST in .env.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=[".env", str(ENV_FILE_PATH)],
+        env_prefix="LANGFUSE__",
+        extra="ignore",
+        frozen=True,
+        case_sensitive=False,
+    )
+
+    public_key: str = ""
+    secret_key: str = ""
+    host: str = "http://localhost:3000"  # Self-hosted Langfuse URL
+    enabled: bool = True
+    flush_at: int = 15  # Number of events before flushing
+    flush_interval: float = 1.0  # Seconds between flushes
+    max_retries: int = 3
+    timeout: int = 30
+    debug: bool = False
+
+
+class RedisSettings(BaseConfigSettings):
+    """Redis caching settings.
+
+    Used for exact-match query caching to avoid redundant LLM calls.
+    Set REDIS__HOST, REDIS__PORT, REDIS__PASSWORD in .env.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=[".env", str(ENV_FILE_PATH)],
+        env_prefix="REDIS__",
+        extra="ignore",
+        frozen=True,
+        case_sensitive=False,
+    )
+
+    host: str = "localhost"
+    port: int = 6379
+    password: str = ""
+    db: int = 0
+    decode_responses: bool = True
+    socket_timeout: int = 30
+    socket_connect_timeout: int = 30
+
+    # Cache settings
+    ttl_hours: int = 6  # Cache TTL in hours
+
+
 
 class Settings(BaseConfigSettings):
     """Main application settings.
@@ -154,6 +207,7 @@ class Settings(BaseConfigSettings):
     Reads configuration from environment variables and .env file.
     Week 2 adds ArxivSettings and PDFParserSettings for data ingestion.
     Week 3 adds ChunkingSettings and Jina API key for hybrid search.
+    Week 5 adds LangfuseSettings and RedisSettings for observability and caching.
     """
 
     app_version: str = "0.1.0"
@@ -180,6 +234,8 @@ class Settings(BaseConfigSettings):
     pdf_parser: PDFParserSettings = Field(default_factory=PDFParserSettings)
     chunking: ChunkingSettings = Field(default_factory=ChunkingSettings)
     opensearch: OpenSearchSettings = Field(default_factory=OpenSearchSettings)
+    langfuse: LangfuseSettings = Field(default_factory=LangfuseSettings)
+    redis: RedisSettings = Field(default_factory=RedisSettings)
 
     @field_validator("postgres_database_url")
     @classmethod
@@ -192,3 +248,4 @@ class Settings(BaseConfigSettings):
 def get_settings() -> Settings:
     """Create and return application settings instance."""
     return Settings()
+
