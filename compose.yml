@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # Week 1: Infrastructure Foundation
 # Services: API, PostgreSQL, OpenSearch, OpenSearch Dashboards, Airflow, Ollama
 # =============================================================================
@@ -45,6 +45,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
+  redis_data:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U rag_user -d rag_db"]
@@ -73,6 +74,7 @@ services:
         soft: -1
         hard: -1
     volumes:
+  redis_data:
       - opensearch_data:/usr/share/opensearch/data
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
@@ -123,6 +125,7 @@ services:
       - OPENSEARCH__HOST=http://opensearch:9200
       - OLLAMA_HOST=http://ollama:11434
     volumes:
+  redis_data:
       - ./airflow/dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
@@ -145,6 +148,7 @@ services:
     ports:
       - "11434:11434"
     volumes:
+  redis_data:
       - ollama_data:/root/.ollama
     healthcheck:
       test: ["CMD", "ollama", "list"]
@@ -155,7 +159,25 @@ services:
     networks:
       - rag-network
 
+  # Week 5: Redis for query caching
+  redis:
+    image: redis:7-alpine
+    container_name: rag-redis
+    ports:
+      - "6379:6379"
+    volumes:
+  redis_data:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
+  redis_data:
   postgres_data:
   opensearch_data:
   ollama_data:
@@ -164,3 +186,4 @@ volumes:
 networks:
   rag-network:
     driver: bridge
+
