@@ -14,6 +14,7 @@ Future weeks will add more services to the lifespan and include more routers:
 
 import logging
 import os
+import gradio as gr
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -27,6 +28,7 @@ from src.services.opensearch.factory import make_opensearch_client
 from src.services.pdf_parser.factory import make_pdf_parser_service
 from src.services.embeddings.factory import make_jina_embeddings_client
 from src.services.ollama.factory import make_ollama_client
+from src.gradio_app import create_gradio_interface
 
 # Setup logging
 logging.basicConfig(
@@ -134,8 +136,13 @@ app.include_router(ask.ask_router, prefix="/api/v1")  # Week 4: RAG ask endpoint
 app.include_router(ask.stream_router, prefix="/api/v1")  # Week 4: Streaming RAG endpoint
 
 
+
+# Week 4: Mount Gradio chat UI at /chat
+gradio_interface = create_gradio_interface()
+app = gr.mount_gradio_app(app, gradio_interface, path="/chat")
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")
+
 
 
 
