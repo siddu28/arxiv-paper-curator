@@ -25,6 +25,7 @@ dependencies = [
     "semchunk>=3.0.0",
     "gradio>=4.0.0",
     "langfuse>=2.0.0",
+    "redis>=5.0.0",
 ]
 readme = "README.md"
 
@@ -61,6 +62,7 @@ env_files = ".env.test"
 [tool.mypy]
 explicit_package_bases = true
 ignore_errors = true
+
 
 
 
