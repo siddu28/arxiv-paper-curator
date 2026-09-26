@@ -29,6 +29,8 @@ from src.services.pdf_parser.factory import make_pdf_parser_service
 from src.services.embeddings.factory import make_jina_embeddings_client
 from src.services.ollama.factory import make_ollama_client
 from src.gradio_app import create_gradio_interface
+from src.services.langfuse.factory import make_langfuse_tracer
+from src.services.cache.factory import make_cache_client
 
 # Setup logging
 logging.basicConfig(
@@ -110,7 +112,20 @@ async def lifespan(app: FastAPI):
         logger.info(f"Ollama LLM ready: version={ollama_health.get('version', 'unknown')}")
     except Exception as e:
         logger.warning(f"Ollama not available (LLM features limited): {e}")
-    logger.info("Services initialized: Database, OpenSearch, arXiv, PDF Parser, Jina Embeddings, Ollama LLM")
+
+    # Week 5: Initialize Langfuse tracing
+    langfuse_tracer = make_langfuse_tracer(settings)
+    app.state.langfuse_tracer = langfuse_tracer
+
+    # Week 5: Initialize Redis cache (optional - app works without it)
+    try:
+        cache_client = make_cache_client(settings)
+        app.state.cache_client = cache_client
+        logger.info("Redis cache initialized")
+    except Exception as e:
+        logger.warning(f"Redis not available (caching disabled): {e}")
+        app.state.cache_client = None
+    logger.info("Services initialized: Database, OpenSearch, arXiv, PDF Parser, Jina Embeddings, Ollama LLM, Langfuse, Redis")
     logger.info("API ready")
 
     yield
@@ -142,6 +157,7 @@ gradio_interface = create_gradio_interface()
 app = gr.mount_gradio_app(app, gradio_interface, path="/chat")
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")
+
 
 
 
