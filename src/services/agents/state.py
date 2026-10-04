@@ -9,7 +9,7 @@ from typing import Annotated, Any, Dict, List, Optional, TypedDict
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 
-from .models import GradingResult, GuardrailScoring, RoutingDecision, SourceItem, ToolArtefact
+from .models import GradingResult, GuardrailScoring, RoutingDecision, SourceItem, ToolArtifact
 
 
 class AgentState(TypedDict):
@@ -51,9 +51,9 @@ class AgentState(TypedDict):
         List of relevant sources to display to the user.
     :type relevant_sources: List[SourceItem]
 
-    :cvar relevant_tool_artefacts:
+    :cvar relevant_tool_artifacts:
         List of tool artifacts with metadata from tool executions.
-    :type relevant_tool_artefacts: Optional[List[ToolArtefact]]
+    :type relevant_tool_artifacts: Optional[List[ToolArtifact]]
 
     :cvar grading_results:
         List of grading results for each retrieved document.
@@ -72,6 +72,7 @@ class AgentState(TypedDict):
     routing_decision: Optional[RoutingDecision]
     sources: Optional[Dict[str, Any]]
     relevant_sources: List[SourceItem]
-    relevant_tool_artefacts: Optional[List[ToolArtefact]]
+    relevant_tool_artifacts: Optional[List[ToolArtifact]]
     grading_results: List[GradingResult]
     metadata: Dict[str, Any]
+
