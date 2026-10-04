@@ -14,7 +14,7 @@ from typing import Dict, List
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from src.dependencies import CacheDep, EmbeddingsDep, LangfuseDep, OllamaDep, OpenSearchDep
-from src.schemas.api.ask import AskRequest, AskResponse
+from src.schemas.api.ask import AskRequest, AskResponse, FeedbackRequest, FeedbackResponse
 from src.services.langfuse.tracer import RAGTracer
 
 logger = logging.getLogger(__name__)
@@ -302,3 +302,39 @@ async def ask_question_stream(
     return StreamingResponse(
         generate_stream(), media_type="text/plain", headers={"Cache-Control": "no-cache", "Connection": "keep-alive"}
     )
+
+@ask_router.post("/feedback", response_model=FeedbackResponse)
+async def submit_feedback(
+    request: FeedbackRequest,
+    langfuse_tracer: LangfuseDep,
+) -> FeedbackResponse:
+    """Submit user feedback on a RAG answer.
+
+    Links feedback to a Langfuse trace via trace_id, enabling
+    quality monitoring and answer improvement tracking.
+
+    :param request: FeedbackRequest with trace_id, score, and optional comment
+    :param langfuse_tracer: Langfuse tracer for recording the score
+    :returns: FeedbackResponse indicating success or failure
+    """
+    try:
+        success = langfuse_tracer.submit_feedback(
+            trace_id=request.trace_id,
+            score=request.score,
+            comment=request.comment,
+        )
+
+        if success:
+            return FeedbackResponse(
+                success=True,
+                message="Feedback recorded successfully",
+            )
+        else:
+            return FeedbackResponse(
+                success=False,
+                message="Failed to record feedback — Langfuse may be disabled",
+            )
+
+    except Exception as e:
+        logger.error(f"Error submitting feedback: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to submit feedback: {str(e)}")
