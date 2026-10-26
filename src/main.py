@@ -29,8 +29,10 @@ from src.services.pdf_parser.factory import make_pdf_parser_service
 from src.services.embeddings.factory import make_jina_embeddings_client
 from src.services.ollama.factory import make_ollama_client
 from src.gradio_app import create_gradio_interface
+from src.routers import agentic_ask
 from src.services.langfuse.factory import make_langfuse_tracer
 from src.services.cache.factory import make_cache_client
+from src.services.agents.factory import make_agentic_rag_service
 
 # Setup logging
 logging.basicConfig(
@@ -125,7 +127,21 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Redis not available (caching disabled): {e}")
         app.state.cache_client = None
-    logger.info("Services initialized: Database, OpenSearch, arXiv, PDF Parser, Jina Embeddings, Ollama LLM, Langfuse, Redis")
+
+    # Week 6: Initialize Agentic RAG service
+    try:
+        agentic_rag = make_agentic_rag_service(
+            opensearch_client=opensearch_client,
+            ollama_client=ollama_client,
+            embeddings_client=jina_client,
+            langfuse_tracer=langfuse_tracer,
+        )
+        app.state.agentic_rag = agentic_rag
+        logger.info("Agentic RAG service initialized")
+    except Exception as e:
+        logger.warning(f"Agentic RAG not available: {e}")
+        app.state.agentic_rag = None
+    logger.info("Services initialized: Database, OpenSearch, arXiv, PDF Parser, Jina Embeddings, Ollama LLM, Langfuse, Redis, AgenticRAG")
     logger.info("API ready")
 
     yield
@@ -149,6 +165,7 @@ app.include_router(search.router, prefix="/api/v1")  # Week 3: BM25 search
 app.include_router(hybrid_search.router, prefix="/api/v1")  # Week 4: Hybrid search
 app.include_router(ask.ask_router, prefix="/api/v1")  # Week 4: RAG ask endpoint
 app.include_router(ask.stream_router, prefix="/api/v1")  # Week 4: Streaming RAG endpoint
+    app.include_router(agentic_ask.router)  # Week 6: Agentic RAG endpoint
 
 
 
@@ -157,6 +174,8 @@ gradio_interface = create_gradio_interface()
 app = gr.mount_gradio_app(app, gradio_interface, path="/chat")
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")
+
+
 
 
 

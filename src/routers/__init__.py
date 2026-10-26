@@ -10,4 +10,7 @@ from . import search
 from . import hybrid_search
 from . import ask
 
-__all__ = ["ping", "search", "hybrid_search", "ask"]
+# Week 6: Agentic RAG router
+from . import agentic_ask
+
+__all__ = ["ping", "search", "hybrid_search", "ask", "agentic_ask"]

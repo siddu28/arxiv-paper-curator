@@ -26,6 +26,7 @@ from src.services.embeddings.jina_client import JinaEmbeddingsClient
 from src.services.ollama.client import OllamaClient
 from src.services.langfuse.client import LangfuseTracer
 from src.services.cache.client import CacheClient
+from src.services.agents.agentic_rag import AgenticRAGService
 
 
 @lru_cache
@@ -85,6 +86,10 @@ def get_cache_client(request: Request) -> CacheClient:
     "`""Get Redis cache client from the request state (may be None)."`""
     return getattr(request.app.state, 'cache_client', None)
 
+
+def get_agentic_rag(request: Request) -> AgenticRAGService:
+    '''Get AgenticRAG service from request state (may be None).'''
+    return getattr(request.app.state, 'agentic_rag', None)
 # Dependency annotations - use these in router function signatures
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 DatabaseDep = Annotated[BaseDatabase, Depends(get_database)]
@@ -96,6 +101,8 @@ EmbeddingsDep = Annotated[JinaEmbeddingsClient, Depends(get_embeddings_client)]
 OllamaDep = Annotated[OllamaClient, Depends(get_ollama_client)]
 LangfuseDep = Annotated[LangfuseTracer, Depends(get_langfuse_tracer)]
 CacheDep = Annotated[CacheClient, Depends(get_cache_client)]
+AgenticRAGDep = Annotated[AgenticRAGService, Depends(get_agentic_rag)]
+
 
 
 
