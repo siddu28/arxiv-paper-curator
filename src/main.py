@@ -1,4 +1,4 @@
-﻿"""
+"""
 FastAPI application entry point for the arXiv Paper Curator.
 =============================================================
 
@@ -9,7 +9,7 @@ Future weeks will add more services to the lifespan and include more routers:
     - Week 4: Hybrid search router, embeddings service
     - Week 5: Ollama LLM, RAG ask/stream routers, Gradio app
     - Week 6: Langfuse tracer, Redis cache
-    - Week 7: Telegram bot, Agentic RAG router
+    - Week 7: Telegram bot, Agentic RAG router (DONE)
 """
 
 import logging
@@ -33,6 +33,7 @@ from src.routers import agentic_ask
 from src.services.langfuse.factory import make_langfuse_tracer
 from src.services.cache.factory import make_cache_client
 from src.services.agents.factory import make_agentic_rag_service
+from src.services.telegram.factory import make_telegram_service
 
 # Setup logging
 logging.basicConfig(
@@ -142,11 +143,35 @@ async def lifespan(app: FastAPI):
         logger.warning(f"Agentic RAG not available: {e}")
         app.state.agentic_rag = None
     logger.info("Services initialized: Database, OpenSearch, arXiv, PDF Parser, Jina Embeddings, Ollama LLM, Langfuse, Redis, AgenticRAG")
+
+    # Week 7: Initialize Telegram bot (optional — requires TELEGRAM__ENABLED=true)
+    telegram_service = make_telegram_service(
+        opensearch_client=opensearch_client,
+        embeddings_client=jina_client,
+        ollama_client=ollama_client,
+        cache_client=app.state.cache_client,
+        langfuse_tracer=langfuse_tracer,
+    )
+
+    if telegram_service:
+        app.state.telegram_service = telegram_service
+        try:
+            await telegram_service.start()
+            logger.info("Telegram bot started successfully")
+        except Exception as e:
+            logger.error(f"Failed to start Telegram bot: {e}")
+    else:
+        logger.info("Telegram bot not configured - skipping initialization")
+
     logger.info("API ready")
 
     yield
 
     # Shutdown: clean up resources
+    if hasattr(app.state, "telegram_service") and app.state.telegram_service:
+        await app.state.telegram_service.stop()
+        logger.info("Telegram bot stopped")
+
     database.teardown()
     logger.info("API shutdown complete")
 
@@ -164,7 +189,7 @@ app.include_router(ping.router, prefix="/api/v1")  # Health check endpoint
 app.include_router(search.router, prefix="/api/v1")  # Week 3: BM25 search
 app.include_router(hybrid_search.router, prefix="/api/v1")  # Week 4: Hybrid search
 app.include_router(ask.ask_router, prefix="/api/v1")  # Week 4: RAG ask endpoint
-app.include_router(ask.stream_router, prefix="/api/v1")  # Week 4: Streaming RAG endpoint
+    app.include_router(ask.stream_router, prefix="/api/v1")  # Week 4: Streaming RAG endpoint
     app.include_router(agentic_ask.router)  # Week 6: Agentic RAG endpoint
 
 
