@@ -29,6 +29,7 @@ dependencies = [
     "langgraph>=0.2.0",
     "langchain-ollama>=0.2.0",
     "langchain-core>=0.3.0",
+    "python-telegram-bot>=21.0",
 ]
 readme = "README.md"
 
@@ -65,6 +66,7 @@ env_files = ".env.test"
 [tool.mypy]
 explicit_package_bases = true
 ignore_errors = true
+
 
 
 
