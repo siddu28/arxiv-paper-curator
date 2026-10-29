@@ -1,0 +1,51 @@
+﻿"""Factory for creating TelegramBot instances.
+
+Reads TelegramSettings from config — bot is only created if
+TELEGRAM__ENABLED=true and TELEGRAM__BOT_TOKEN is set.
+"""
+
+import logging
+from typing import Optional
+
+from src.config import get_settings
+from src.services.telegram.bot import TelegramBot
+
+logger = logging.getLogger(__name__)
+
+
+def make_telegram_service(
+    opensearch_client,
+    embeddings_client,
+    ollama_client,
+    cache_client=None,
+    langfuse_tracer=None,
+) -> Optional[TelegramBot]:
+    """Create Telegram bot if enabled in settings.
+
+    :param opensearch_client: OpenSearch client for search
+    :param embeddings_client: Embeddings service client
+    :param ollama_client: Ollama LLM client
+    :param cache_client: Optional Redis cache client
+    :param langfuse_tracer: Optional Langfuse tracer (reserved for future use)
+    :returns: TelegramBot instance or None if disabled/unconfigured
+    """
+    settings = get_settings()
+
+    if not settings.telegram.enabled:
+        logger.info("Telegram bot is disabled")
+        return None
+
+    if not settings.telegram.bot_token:
+        logger.warning("Telegram bot token not configured")
+        return None
+
+    bot = TelegramBot(
+        bot_token=settings.telegram.bot_token,
+        opensearch_client=opensearch_client,
+        embeddings_client=embeddings_client,
+        ollama_client=ollama_client,
+        cache_client=cache_client,
+    )
+
+    logger.info("Telegram bot created successfully")
+    return bot
