@@ -174,16 +174,16 @@ The agentic endpoint (`POST /ask-agentic`) adds an intelligent decision-making l
 
 ```mermaid
 graph TD
-    START(("START")) --> G["🛡 Guardrail<br/>Score query 0-100"]
-    G -->|"score ≥ 60<br/>In scope"| R["🔍 Retrieve<br/>Create tool call"]
-    G -->|"score < 60<br/>Off topic"| OOS["🚫 Out of Scope<br/>Polite rejection"]
+    START(("START")) --> G["Guardrail - Score query 0-100"]
+    G -->|"score >= 60"| R["Retrieve - Create tool call"]
+    G -->|"score < 60"| OOS["Out of Scope - Polite rejection"]
     OOS --> END1(("END"))
     
-    R -->|"tool_calls"| TR["⚙️ ToolNode<br/>Execute retrieval"]
+    R -->|"tool_calls"| TR["ToolNode - Execute retrieval"]
     R -->|"max attempts"| END2(("END"))
-    TR --> GD["📋 Grade Documents<br/>LLM relevance check"]
-    GD -->|"relevant"| GA["✍️ Generate Answer<br/>From verified context"]
-    GD -->|"not relevant"| RW["🔄 Rewrite Query<br/>Reformulate + retry"]
+    TR --> GD["Grade Documents - LLM relevance check"]
+    GD -->|"relevant"| GA["Generate Answer - From verified context"]
+    GD -->|"not relevant"| RW["Rewrite Query - Reformulate and retry"]
     RW --> R
     GA --> END3(("END"))
 ```
