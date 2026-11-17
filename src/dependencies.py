@@ -1,4 +1,4 @@
-﻿"""
+"""
 FastAPI dependency injection for the arXiv Paper Curator.
 =========================================================
 
